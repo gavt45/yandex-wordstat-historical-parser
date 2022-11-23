@@ -1,0 +1,6 @@
+js2py
+requests
+selenium
+pandas
+numpy
+2captcha-python
