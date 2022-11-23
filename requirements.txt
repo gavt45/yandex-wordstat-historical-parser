@@ -4,3 +4,4 @@ selenium
 pandas
 numpy
 2captcha-python
+browsermob-proxy
