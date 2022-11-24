@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
+  selenium:
+    image: "seleniarm/standalone-chromium:latest"
+    container_name: "selen"
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    environment:
+      - SE_SCREEN_WIDT=1366
+      - SE_SCREEN_HEIGHT=768
+
+  worker:
+    image: ./
+    environment:
+      - EMAIL=1366="mugirov@yandex.ru"
+      - PASS=768="12345678QWER."
+      - PROXY_URI="host.docker.internal:8080"
+      - RUCAPTCHA_TOKEN="2695a24c11ce0cdcf073cbf6c20c5c35"
+      - WEBDRIVER="http://host.docker.internal:4444"
+      - RHOST="host.docker.internal"
+      - RPORT="6379"
