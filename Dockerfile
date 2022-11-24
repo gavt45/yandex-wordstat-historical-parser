@@ -14,6 +14,8 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN python3 -m pip install -r requirements.txt
 
+RUN curl -L https://raw.githubusercontent.com/eficode/wait-for/v2.2.3/wait-for -o /bin/wait-for && chmod +x /bin/wait-for
+
 COPY . .
 #COPY yandex_parser/ /app/
 #COPY browsermob_proxy_py/ /app/

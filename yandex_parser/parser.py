@@ -89,7 +89,7 @@ class Parser:
             # chrome_options.add_argument('--no-sandbox')
             # chrome_options.add_argument('--headless')
             # chrome_options.add_argument(f'--user-agent="{self.useragent}"')
-            chrome_options.add_argument('--proxy-server={0}'.format(f"http://host.docker.internal:{self.proxy.proxy.split(':')[1]}"))
+            chrome_options.add_argument('--proxy-server={0}'.format(f"http://{proxy_uri.split(':')[0]}:{self.proxy.proxy.split(':')[1]}"))
 
             self.browser = webdriver.Remote(webdriver_uri, options=chrome_options)
             self.actions = ActionChains(self.browser)
@@ -218,8 +218,8 @@ class Parser:
         self.click(
             "/html/body/div[1]/table/tbody/tr/td[4]/div/div/form/table/tbody/tr[2]/td[1]/table/tbody/tr/td[1]/ul/li[3]/label/input")
 
-        elem = self.click("//*[@class=\"b-form-input__input\"]")
         try:
+            elem = self.click("//*[@class=\"b-form-input__input\"]")
             for symbol in q:
                 elem.send_keys(symbol)
                 sleep(random() * 0.1)
