@@ -76,7 +76,7 @@ class Parser:
         self.user = yandex_login
         self._pass = yandex_pass
 
-        self.proxy = Client("localhost:8080")
+        self.proxy = Client(proxy_uri)
         logging.warn(self.proxy.proxy)
         try:
             logging.warn(f"{proxy_uri}:{self.proxy.proxy.split(':')[1]}")

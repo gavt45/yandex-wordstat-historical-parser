@@ -1,3 +1,6 @@
 [submodule "browsermob-proxy"]
 	path = browsermob-proxy
 	url = https://github.com/lightbody/browsermob-proxy/
+[submodule "browsermob_proxy_py"]
+	path = browsermob_proxy_py
+	url = https://github.com/AutomatedTester/browsermob-proxy-py
