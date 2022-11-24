@@ -1,17 +1,12 @@
 version: "3.9"
 services:
-  redis:
-    image: "redis:latest"
-    ports:
-      - "127.0.0.1:6379:6379"
-
   selenium:
     image: "seleniarm/standalone-chromium:latest"
-    container_name: "selen"
     ports:
       - "4444"
-      - "127.0.0.1:7900:7900"
+      - "127.0.0.1:${VNCDEBUG}:7900"
     shm_size: 2gb
+    restart: always
     environment:
       - SE_SCREEN_WIDT=1366
       - SE_SCREEN_HEIGHT=768
@@ -19,6 +14,7 @@ services:
   proxy:
     build:
       context: ./browsermob-proxy-2.1.4
+    restart: always
     ports:
       - "8080"
       - "8082"
@@ -27,15 +23,15 @@ services:
     build:
       context: .
     command: sh -c '/bin/wait-for http://selenium:4444/ -- python3 main.py'
+    restart: always
     environment:
-      - EMAIL=${EMAIL}
-      - PASS=${PASS}
+      - EMAIL
+      - PASS
       - PROXY_URI=proxy:8080
-      - RUCAPTCHA_TOKEN=${RUCAPTCHA_TOKEN}
+      - RUCAPTCHA_TOKEN
       - WEBDRIVER=http://selenium:4444
-      - RHOST=redis
+      - RHOST=host.docker.internal
       - RPORT=6379
     depends_on:
-      - redis
       - proxy
       - selenium

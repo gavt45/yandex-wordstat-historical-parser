@@ -2,6 +2,7 @@ import logging
 
 import redis
 import json
+from time import sleep
 
 
 class Worker:
@@ -29,20 +30,19 @@ class Worker:
             return None, None, None
 
     def dump(self, uid, res: dict):
-        return json.dumps(
-            {
+        return json.dumps({
                 "uid": uid,
                 "data": res
-             }
-        )
+             })
 
     def work(self):
         while not self.done:
-            dat = self.ps.get_message(timeout=1)
-            if not dat or dat['data'] == 1:
+            dat = self.r.rpop(self.TASKS_EXC)
+            if not dat:
+                sleep(0.1)
                 continue
             try:
-                uid, kw, cmd = self.load(dat['data'])
+                uid, kw, cmd = self.load(dat)
                 logging.warn(f"[worker] Working: {uid} kw: {kw}")
                 if not uid:
                     logging.warn(f"Strange msg: {dat}")
@@ -58,7 +58,7 @@ class Worker:
                 if not data:
                     logging.warn("Return empty result!")
                     data = {}
-                self.r.publish(self.DONE_EXC, self.dump(uid, data))
+                self.r.lpush(self.DONE_EXC, self.dump(uid, data))
             except Exception as e:
                 self.parser.close()
                 raise e
