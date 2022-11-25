@@ -1,8 +1,15 @@
+from functools import reduce
+
 import redis
 from time import sleep
 import pandas as pd
 import os
 import json
+import logging
+import datetime
+import operator
+
+logging.basicConfig(level=logging.INFO)
 
 c = redis.Redis()
 
@@ -22,18 +29,31 @@ if __name__ == "__main__":
     data = pd.read_csv('cosmetics_19k_sample.csv')
     start_idx = start_iter_value()
 
-    process_data = data.loc[start_idx:start_idx + 2]
+    process_data = data.loc[start_idx:start_idx + 1000]
     keywords_idx = set(process_data['index'].to_list())
 
     for idx, row in process_data.iterrows():
         enqueue(row['index'], row['KEYWORDS'])
 
     res_dict = {}
+    distance_time = []
+    request_time = datetime.datetime.now()
+    epoch_time = datetime.datetime(1970, 1, 1)
     while len(keywords_idx):
         d = c.rpop("done")
         if d:
+            if len(keywords_idx) % 20 == 0:
+                logging.info(f'Left {len(keywords_idx)} keywords')
+            if len(distance_time) > 20:
+                td = reduce(operator.add, distance_time)
+                logging.info(f'Average time: {td.total_seconds() / len(distance_time)}')
+                distance_time.pop()
+            new_time = datetime.datetime.now()
+            distance_time.append(new_time - request_time)
+            request_time = new_time
+
             result = json.loads(d.decode('utf-8'))
-            print(result['uid'], keywords_idx)
+            logging.info(f"Got {result['uid']} left: {len(keywords_idx)}")
 
             if 'dataGroups' not in result['data']:
                 res_dict[result['uid']] = {}
@@ -41,12 +61,12 @@ if __name__ == "__main__":
                 res_dict[result['uid']] = result['data']['dataGroups'][0]
 
             keywords_idx.remove(int(result['uid']))
-        sleep(1)
+        sleep(.01)
         if not c.llen("tasks") and len(keywords_idx) != 0:
             for idx in list(keywords_idx):
                 enqueue(idx, process_data[process_data['index'] == idx]['KEYWORDS'][idx])
 
-    with open(f'res/{start_idx + 2}.json', 'w') as fp:
+    with open(f'res/{start_idx + 1000}.json', 'w') as fp:
         json.dump(res_dict, fp)
 
 
