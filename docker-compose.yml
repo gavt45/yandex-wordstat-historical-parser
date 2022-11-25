@@ -30,7 +30,7 @@ services:
       - PROXY_URI=proxy:8080
       - RUCAPTCHA_TOKEN
       - WEBDRIVER=http://selenium:4444
-      - RHOST=host.docker.internal
+      - RHOST=172.17.0.1
       - RPORT=6379
     depends_on:
       - proxy
