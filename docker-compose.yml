@@ -41,3 +41,8 @@ services:
       - selenium
     networks:
       - parse
+
+networks:
+  parse:
+    external:
+      name: parse

@@ -6,3 +6,8 @@ services:
       - "6379:6379"
     networks:
       - parse
+
+networks:
+  parse:
+    external:
+      name: parse
