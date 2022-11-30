@@ -1,5 +1,4 @@
 from functools import reduce
-
 import redis
 from time import sleep
 import pandas as pd
@@ -39,35 +38,48 @@ if __name__ == "__main__":
     distance_time = []
     request_time = datetime.datetime.now()
     epoch_time = datetime.datetime(1970, 1, 1)
-    while len(keywords_idx):
-        d = c.rpop("done")
-        if d:
-            if len(keywords_idx) % 20 == 0:
-                logging.info(f'Left {len(keywords_idx)} keywords')
-            if len(distance_time) > 20:
-                td = reduce(operator.add, distance_time)
-                logging.info(f'Average time: {td.total_seconds() / len(distance_time)}')
-                distance_time.pop()
-            new_time = datetime.datetime.now()
-            distance_time.append(new_time - request_time)
-            request_time = new_time
+    try:
+        while len(keywords_idx):
+            d = c.rpop("done")
+            if d:
+                if len(keywords_idx) % 20 == 0:
+                    logging.info(f'Left {len(keywords_idx)} keywords')
+                if len(distance_time) > 20:
+                    td = reduce(operator.add, distance_time)
+                    logging.info(f'Average time: {td.total_seconds() / len(distance_time)}')
+                    distance_time.pop()
+                if len(keywords_idx) % 100 == 0:
+                    with open(f'res/{start_idx + 1000}.json', 'w') as fp:
+                        json.dump(res_dict, fp)
+                new_time = datetime.datetime.now()
+                distance_time.append(new_time - request_time)
+                request_time = new_time
 
-            result = json.loads(d.decode('utf-8'))
-            logging.info(f"Got {result['uid']} left: {len(keywords_idx)}")
+                result = json.loads(d.decode('utf-8'))
+                logging.info(f"Got {result['uid']} left: {len(keywords_idx)}")
 
-            if 'dataGroups' not in result['data']:
-                res_dict[result['uid']] = {}
-            else:
-                res_dict[result['uid']] = result['data']['dataGroups'][0]
+                if 'dataGroups' not in result['data']:
+                    res_dict[result['uid']] = {}
+                else:
+                    res_dict[result['uid']] = result['data']['dataGroups'][0]
 
-            keywords_idx.remove(int(result['uid']))
-        sleep(.01)
-        if not c.llen("tasks") and len(keywords_idx) != 0:
-            for idx in list(keywords_idx):
-                enqueue(idx, process_data[process_data['index'] == idx]['KEYWORDS'][idx])
+                keywords_idx.remove(int(result['uid']))
+            sleep(.01)
+            if not c.llen("tasks") and len(keywords_idx) != 0:
+                for idx in list(keywords_idx):
+                    enqueue(idx, process_data[process_data['index'] == idx]['KEYWORDS'][idx])
 
-    with open(f'res/{start_idx + 1000}.json', 'w') as fp:
-        json.dump(res_dict, fp)
+        with open(f'res/{start_idx + 1000}.json', 'w') as fp:
+            json.dump(res_dict, fp)
+
+    except Exception as e:
+        print(e)
+        with open(f'res/{start_idx + len(list(res_dict.keys()))}_failed.json', 'w') as fp:
+            json.dump(res_dict, fp)
+    except KeyboardInterrupt:
+        with open(f'res/{start_idx + len(list(res_dict.keys()))}_interrupted.json', 'w') as fp:
+            json.dump(res_dict, fp)
+
 
 
 
