@@ -4,10 +4,13 @@ import redis
 import json
 from time import sleep
 
+from yandex_parser import parser as prser
+
 
 class Worker:
     TASKS_EXC = "tasks"
     DONE_EXC = "done"
+    DLX_EXC = "dlx"
 
     def __init__(self,
                  host,
@@ -53,7 +56,12 @@ class Worker:
                     self.parser.close()
                     continue
 
-                data = self.parser.get(kw)
+                data = None
+
+                try:
+                    data = self.parser.get(kw)
+                except prser.ParserRecursionException:
+                    self.r.lpush(self.DLX_EXC, dat)
 
                 if not data:
                     logging.warn("Return empty result!")

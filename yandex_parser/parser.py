@@ -23,6 +23,9 @@ import logging
 from twocaptcha import TwoCaptcha
 
 
+class ParserRecursionException(Exception):
+    pass
+
 class Parser:
     # useragent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
 
@@ -192,6 +195,9 @@ class Parser:
                 sleep(2)
             logging.info(f"[solver] FUXK ME 228: {code}")
 
+            with open(f'data/captcha/{uid}.solution.txt', 'wb') as f:
+                f.write(code)
+
             WebDriverWait(self.browser, 3).until(
                 EC.presence_of_element_located(('xpath', "/html/body/div[1]/div/div/form/div/div[2]/span/input"))
                 # wait until the lowest table is downloaded
@@ -210,8 +216,8 @@ class Parser:
         logging.info(f"[solver] SOLVED!")
 
     def get(self, q, rec=0):
-        if rec > 2:
-            raise Exception("MOM GAY")
+        if rec > 10:
+            raise ParserRecursionException()
 
         self.browser.get("https://wordstat.yandex.ru/")
 
@@ -225,6 +231,9 @@ class Parser:
                 sleep(random() * 0.1)
         except StaleElementReferenceException:
             self.solver228()
+            self.get(q, rec=rec + 1)
+        except NoSuchElementException:
+            sleep(3)
             self.get(q, rec=rec + 1)
 
         self.proxy.new_har(options={
@@ -241,7 +250,7 @@ class Parser:
                 # wait until the lowest table is downloaded
             )
             elem = self.browser.find_element(by='xpath', value="/html/body/div[2]/div/div/table/tbody/tr/td[4]/div/div/div")
-            logging.info(elem, elem.text)
+            logging.info(f"{elem} {elem.text}")
             if 'нигде не встречается' in elem.text:
                 return None
         except NoSuchElementException as e:
@@ -256,10 +265,15 @@ class Parser:
             self.solver228()
             self.get(q, rec=rec + 1)
 
-        WebDriverWait(self.browser, 10).until(
-            EC.presence_of_element_located(('xpath', "/html/body/div[2]/div/div/div[3]/div[3]"))
-            # wait until the lowest table is downloaded
-        )
+        try:
+            WebDriverWait(self.browser, 10).until(
+                EC.presence_of_element_located(('xpath', "/html/body/div[2]/div/div/div[3]/div[3]"))
+                # wait until the lowest table is downloaded
+            )
+        except TimeoutException:
+            logging.warn("TIMEOUT waiting for table!")
+            self.get(q, rec=rec + 1)
+
         sleep(0.5)
         result = self.proxy.har
 
