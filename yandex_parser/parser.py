@@ -195,7 +195,7 @@ class Parser:
                 sleep(2)
             logging.info(f"[solver] FUXK ME 228: {code}")
 
-            with open(f'data/captcha/{uid}.solution.txt', 'wb') as f:
+            with open(f'data/captcha/{uid}.solution.txt', 'w') as f:
                 f.write(code)
 
             WebDriverWait(self.browser, 3).until(
